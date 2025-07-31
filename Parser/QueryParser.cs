@@ -102,36 +102,25 @@ namespace SqlEngine.Parser
             Consume(TokenType.From, "Expected 'FROM'");
             var table = Consume(TokenType.Identifier, "Expected table name").Lexeme;
 
-            ExpressionNode? whereClause = null;
-            if (Match(TokenType.Where))
-            {
-                whereClause = ParseExpression();
-            }
+            
 
 
 
             // Optional join parsing
             JoinInfo? join = null;
 
-            // Check if next token is join type or just JOIN
-            if (Match(TokenType.Join) || Match(TokenType.Inner) || Match(TokenType.Left) || Match(TokenType.Right) || Match(TokenType.Full))
+            if (Check(TokenType.Join) || Check(TokenType.Inner) || Check(TokenType.Left) || Check(TokenType.Right) || Check(TokenType.Full))
             {
-                string joinType = "INNER";  // default join type
+                string joinType = "INNER";  // default
 
-                // If first matched token is join type, record it and then expect JOIN keyword
-                if (Previous().Type == TokenType.Inner ||
-                    Previous().Type == TokenType.Left ||
-                    Previous().Type == TokenType.Right ||
-                    Previous().Type == TokenType.Full)
+                if (Match(TokenType.Inner) || Match(TokenType.Left) || Match(TokenType.Right) || Match(TokenType.Full))
                 {
                     joinType = Previous().Lexeme.ToUpper();
-
-                    if (!Match(TokenType.Join))
-                        throw new Exception("Expected JOIN after join type");
+                    Consume(TokenType.Join, "Expected JOIN after join type");
                 }
-                else if (Previous().Type == TokenType.Join)
+                else if (Match(TokenType.Join))
                 {
-                    // If matched token is JOIN itself, joinType remains INNER
+                    joinType = "INNER";
                 }
                 else
                 {
@@ -139,9 +128,7 @@ namespace SqlEngine.Parser
                 }
 
                 var joinTable = Consume(TokenType.Identifier, "Expected join table name").Lexeme;
-
                 Consume(TokenType.On, "Expected ON clause after JOIN table");
-
                 var joinCondition = ParseExpression();
 
                 join = new JoinInfo
@@ -150,6 +137,14 @@ namespace SqlEngine.Parser
                     Table = joinTable,
                     OnCondition = joinCondition
                 };
+            }
+
+
+
+            ExpressionNode? whereClause = null;
+            if (Match(TokenType.Where))
+            {
+                whereClause = ParseExpression();
             }
 
 

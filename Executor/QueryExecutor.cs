@@ -126,10 +126,24 @@ namespace SqlEngine.Executor
                 if (!string.IsNullOrEmpty(select.OrderByColumn))
                 {
                     if (select.OrderByDescending)
-                        rows = rows.OrderByDescending(row => row.ContainsKey(select.OrderByColumn) ? row[select.OrderByColumn] : null).ToList();
+                    {
+                        rows = rows.OrderByDescending(row =>
+                        {
+                            var val = row.ContainsKey(select.OrderByColumn) ? row[select.OrderByColumn] : null;
+                            return double.TryParse(val, out var num) ? (object)num : val;
+                        }).ToList();
+                    }
                     else
-                        rows = rows.OrderBy(row => row.ContainsKey(select.OrderByColumn) ? row[select.OrderByColumn] : null).ToList();
+                    {
+                        rows = rows.OrderBy(row =>
+                        {
+                            var val = row.ContainsKey(select.OrderByColumn) ? row[select.OrderByColumn] : null;
+                            return double.TryParse(val, out var num) ? (object)num : val;
+                        }).ToList();
+                    }
                 }
+
+
 
                 var result = new List<Dictionary<string, object>>();
 
@@ -251,10 +265,23 @@ namespace SqlEngine.Executor
                 if (!string.IsNullOrEmpty(select.OrderByColumn))
                 {
                     if (select.OrderByDescending)
-                        result = result.OrderByDescending(r => r.ContainsKey(select.OrderByColumn) ? r[select.OrderByColumn] : null).ToList();
+                    {
+                        result = result.OrderByDescending(r =>
+                        {
+                            var val = r.ContainsKey(select.OrderByColumn) ? r[select.OrderByColumn] : null;
+                            return double.TryParse(val?.ToString(), out var num) ? (object)num : val;
+                        }).ToList();
+                    }
                     else
-                        result = result.OrderBy(r => r.ContainsKey(select.OrderByColumn) ? r[select.OrderByColumn] : null).ToList();
+                    {
+                        result = result.OrderBy(r =>
+                        {
+                            var val = r.ContainsKey(select.OrderByColumn) ? r[select.OrderByColumn] : null;
+                            return double.TryParse(val?.ToString(), out var num) ? (object)num : val;
+                        }).ToList();
+                    }
                 }
+
 
                 return result;
             }
@@ -556,20 +583,26 @@ namespace SqlEngine.Executor
         }
 
 
-        private Dictionary<string, string> CombineRows(string leftTable, Dictionary<string, string> leftRow, string rightTable, Dictionary<string, string> rightRow)
+       private Dictionary<string, string> CombineRows(string leftTable, Dictionary<string, string> leftRow, string rightTable, Dictionary<string, string> rightRow)
         {
             var combined = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var kv in leftRow)
             {
-                var key = kv.Key.Contains(".") ? kv.Key : $"{leftTable}.{kv.Key}";
-                combined[key] = kv.Value;
+                if (!string.IsNullOrEmpty(kv.Key))
+                {
+                    var key = kv.Key.Contains(".") ? kv.Key : $"{leftTable}.{kv.Key}";
+                    combined[key] = kv.Value ?? "NULL";
+                }
             }
 
             foreach (var kv in rightRow)
             {
-                var key = kv.Key.Contains(".") ? kv.Key : $"{rightTable}.{kv.Key}";
-                combined[key] = kv.Value;
+                if (!string.IsNullOrEmpty(kv.Key))
+                {
+                    var key = kv.Key.Contains(".") ? kv.Key : $"{rightTable}.{kv.Key}";
+                    combined[key] = kv.Value ?? "NULL";
+                }
             }
 
             return combined;
